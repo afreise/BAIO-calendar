@@ -4,7 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 from dateutil import parser as dateparser
-import extruct
+
 from urllib.parse import urlparse
 
 HEADERS = {
@@ -303,30 +303,29 @@ def scrape_generic(url):
 
 
 def extract_structured_data(html, url):
-    """Try to extract JSON-LD or microdata Event schema."""
+    """Extract JSON-LD Event schema and OpenGraph tags using BeautifulSoup only."""
     try:
-        data = extruct.extract(html, base_url=url, syntaxes=["json-ld", "microdata", "opengraph"])
+        soup = BeautifulSoup(html, "html.parser")
 
-        # Try JSON-LD first
-        for item in data.get("json-ld", []):
-            if isinstance(item, list):
-                for sub in item:
-                    result = parse_schema_event(sub, url)
+        # Try JSON-LD scripts
+        for script in soup.find_all("script", type="application/ld+json"):
+            try:
+                data = json.loads(script.string or "")
+                items = data if isinstance(data, list) else [data]
+                for item in items:
+                    result = parse_schema_event(item, url)
                     if result:
                         return result
-            else:
-                result = parse_schema_event(item, url)
-                if result:
-                    return result
+            except (json.JSONDecodeError, TypeError):
+                continue
 
         # Try OpenGraph as fallback
-        og = {d["property"]: d["content"] for d in data.get("opengraph", []) if "property" in d and "content" in d}
-        if og.get("og:title"):
-            title = og.get("og:title")
-            description = og.get("og:description")
-            # OG doesn't usually have dates, but worth capturing title/description
-            if title and ("event" in title.lower() or description):
-                return build_event(title, None, None, None, description, url)
+        og_title = soup.find("meta", property="og:title")
+        og_desc = soup.find("meta", property="og:description")
+        title = og_title.get("content", "").strip() if og_title else None
+        description = og_desc.get("content", "").strip() if og_desc else None
+        if title:
+            return build_event(title, None, None, None, description, url)
 
     except Exception:
         pass
