@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Event Calendar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --cream: #f5f0e8;
+      --ink: #1a1612;
+      --rust: #c4451c;
+      --rust-light: #f0d5cc;
+      --sage: #4a6741;
+      --sage-light: #d4e0d2;
+      --border: #d4cdc2;
+      --mono: 'DM Mono', monospace;
+      --serif: 'Instrument Serif', serif;
+    }
+
+    body {
+      background: var(--cream);
+      color: var(--ink);
+      font-family: var(--mono);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 3rem 1.5rem;
+    }
+
+    header {
+      width: 100%;
+      max-width: 640px;
+      margin-bottom: 3rem;
+      border-bottom: 1.5px solid var(--ink);
+      padding-bottom: 1.5rem;
+    }
+
+    header h1 {
+      font-family: var(--serif);
+      font-size: 2.8rem;
+      font-weight: 400;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+
+    header h1 em {
+      font-style: italic;
+      color: var(--rust);
+    }
+
+    header p {
+      margin-top: 0.5rem;
+      font-size: 0.75rem;
+      opacity: 0.55;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    main {
+      width: 100%;
+      max-width: 640px;
+    }
+
+    /* LOGIN */
+    #login-panel {
+      border: 1.5px solid var(--ink);
+      padding: 2rem;
+      background: white;
+    }
+
+    #login-panel label {
+      display: block;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.5rem;
+    }
+
+    #login-panel input[type="password"] {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: var(--cream);
+      padding: 0.65rem 0.85rem;
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    #login-panel input:focus {
+      border-color: var(--ink);
+    }
+
+    #login-error {
+      color: var(--rust);
+      font-size: 0.75rem;
+      margin-top: 0.5rem;
+      min-height: 1rem;
+    }
+
+    /* APP */
+    #app-panel { display: none; }
+
+    .section-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      opacity: 0.5;
+      margin-bottom: 0.6rem;
+    }
+
+    textarea {
+      width: 100%;
+      border: 1.5px solid var(--ink);
+      background: white;
+      padding: 1rem;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      line-height: 1.6;
+      resize: vertical;
+      min-height: 140px;
+      outline: none;
+      transition: border-color 0.15s;
+      color: var(--ink);
+    }
+
+    textarea:focus {
+      border-color: var(--rust);
+    }
+
+    textarea::placeholder {
+      opacity: 0.35;
+    }
+
+    .hint {
+      font-size: 0.68rem;
+      opacity: 0.45;
+      margin-top: 0.4rem;
+      letter-spacing: 0.04em;
+    }
+
+    button.primary {
+      margin-top: 1.25rem;
+      background: var(--ink);
+      color: var(--cream);
+      border: none;
+      padding: 0.8rem 2rem;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    button.primary:hover { background: var(--rust); }
+    button.primary:active { transform: scale(0.98); }
+    button.primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    button.secondary {
+      background: none;
+      border: none;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink);
+      opacity: 0.4;
+      cursor: pointer;
+      text-decoration: underline;
+      padding: 0;
+    }
+
+    button.secondary:hover { opacity: 0.7; }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    /* RESULTS */
+    #results {
+      margin-top: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .result-card {
+      border: 1px solid var(--border);
+      padding: 1rem 1.25rem;
+      background: white;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .result-card.success { border-left: 3px solid var(--sage); }
+    .result-card.error { border-left: 3px solid var(--rust); }
+
+    .result-title {
+      font-family: var(--serif);
+      font-size: 1.05rem;
+      font-style: italic;
+    }
+
+    .result-meta {
+      font-size: 0.72rem;
+      opacity: 0.55;
+    }
+
+    .result-url {
+      font-size: 0.68rem;
+      opacity: 0.4;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .result-link {
+      font-size: 0.72rem;
+      color: var(--sage);
+      text-decoration: none;
+      letter-spacing: 0.05em;
+    }
+
+    .result-link:hover { text-decoration: underline; }
+
+    .result-error-msg {
+      font-size: 0.75rem;
+      color: var(--rust);
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 0.15rem 0.5rem;
+      border-radius: 2px;
+      font-weight: 500;
+    }
+
+    .badge-ok { background: var(--sage-light); color: var(--sage); }
+    .badge-err { background: var(--rust-light); color: var(--rust); }
+
+    #status-line {
+      font-size: 0.72rem;
+      opacity: 0.5;
+      margin-top: 0.5rem;
+      letter-spacing: 0.04em;
+      min-height: 1rem;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 10px; height: 10px;
+      border: 1.5px solid var(--ink);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    hr.divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 2rem 0;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Event <em>Calendar</em></h1>
+  <p>Add events from any URL</p>
+</header>
+
+<main>
+
+  <!-- LOGIN -->
+  <div id="login-panel" {% if authenticated %}style="display:none"{% endif %}>
+    <label for="pw-input">Password</label>
+    <input type="password" id="pw-input" placeholder="Enter password" autocomplete="current-password" />
+    <div id="login-error"></div>
+    <button class="primary" onclick="doLogin()" style="margin-top:1rem">Enter</button>
+  </div>
+
+  <!-- APP -->
+  <div id="app-panel" {% if authenticated %}style="display:block"{% endif %}>
+    <div class="top-bar">
+      <span class="section-label">Paste event URLs below</span>
+      <button class="secondary" onclick="doLogout()">Sign out</button>
+    </div>
+
+    <textarea id="url-input" placeholder="https://lu.ma/some-event&#10;https://eventbrite.com/e/some-event&#10;https://meetup.com/group/events/123"></textarea>
+    <div class="hint">One URL per line. Mix of sources is fine.</div>
+
+    <div>
+      <button class="primary" id="submit-btn" onclick="doSubmit()">Add to Calendar</button>
+    </div>
+
+    <div id="status-line"></div>
+
+    <div id="results"></div>
+  </div>
+
+</main>
+
+<script>
+  async function doLogin() {
+    const pw = document.getElementById("pw-input").value;
+    const err = document.getElementById("login-error");
+    err.textContent = "";
+    const res = await fetch("/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password: pw })
+    });
+    if (res.ok) {
+      document.getElementById("login-panel").style.display = "none";
+      document.getElementById("app-panel").style.display = "block";
+    } else {
+      err.textContent = "Incorrect password.";
+    }
+  }
+
+  document.getElementById("pw-input")?.addEventListener("keydown", e => {
+    if (e.key === "Enter") doLogin();
+  });
+
+  async function doLogout() {
+    await fetch("/logout", { method: "POST" });
+    document.getElementById("app-panel").style.display = "none";
+    document.getElementById("login-panel").style.display = "block";
+    document.getElementById("pw-input").value = "";
+  }
+
+  async function doSubmit() {
+    const raw = document.getElementById("url-input").value;
+    const urls = raw.split("\n").map(s => s.trim()).filter(Boolean);
+    if (!urls.length) return;
+
+    const btn = document.getElementById("submit-btn");
+    const status = document.getElementById("status-line");
+    const results = document.getElementById("results");
+
+    btn.disabled = true;
+    status.innerHTML = `<span class="spinner"></span> Processing ${urls.length} URL${urls.length > 1 ? "s" : ""}…`;
+    results.innerHTML = "";
+
+    const res = await fetch("/add-events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ urls })
+    });
+
+    btn.disabled = false;
+
+    if (!res.ok) {
+      status.textContent = "Something went wrong. Please try again.";
+      return;
+    }
+
+    const data = await res.json();
+    const items = data.results || [];
+    const ok = items.filter(r => r.success).length;
+    status.textContent = `Done — ${ok} of ${items.length} added successfully.`;
+
+    results.innerHTML = items.map(r => {
+      if (r.success) {
+        const ev = r.event;
+        const dateStr = ev.start ? new Date(ev.start).toLocaleString("en-US", {
+          month: "short", day: "numeric", year: "numeric",
+          hour: "numeric", minute: "2-digit"
+        }) : "Date unknown";
+        return `
+          <div class="result-card success">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem">
+              <div class="result-title">${esc(ev.title)}</div>
+              <span class="badge badge-ok">Added</span>
+            </div>
+            <div class="result-meta">${dateStr}${ev.location ? " · " + esc(ev.location) : ""}</div>
+            <div class="result-url">${esc(r.url)}</div>
+            ${r.calendar_link ? `<a class="result-link" href="${r.calendar_link}" target="_blank">View in Google Calendar →</a>` : ""}
+          </div>`;
+      } else {
+        return `
+          <div class="result-card error">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem">
+              <div class="result-url">${esc(r.url)}</div>
+              <span class="badge badge-err">Failed</span>
+            </div>
+            <div class="result-error-msg">${esc(r.error || "Unknown error")}</div>
+          </div>`;
+      }
+    }).join("");
+  }
+
+  function esc(s) {
+    return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+</script>
+
+</body>
+</html>
