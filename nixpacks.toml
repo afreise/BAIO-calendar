@@ -6,3 +6,6 @@ cmds = ["pip install -r requirements.txt", "playwright install chromium"]
 
 [start]
 cmd = "gunicorn app:app --bind 0.0.0.0:$PORT"
+
+[variables]
+NIXPACKS_PYTHON_VERSION = "3.12"
