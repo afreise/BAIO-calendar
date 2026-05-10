@@ -2,7 +2,10 @@
 nixPkgs = ["chromium", "nss", "nspr", "atk", "cups", "libdrm", "dbus", "libxkbcommon", "xorg.libX11", "xorg.libXcomposite", "xorg.libXdamage", "xorg.libXext", "xorg.libXfixes", "xorg.libXrandr", "mesa", "expat", "xorg.libxcb", "pango", "cairo", "udev", "alsa-lib"]
 
 [phases.install]
-cmds = ["pip install -r requirements.txt", "playwright install chromium"]
+cmds = ["pip install -r requirements.txt"]
 
 [start]
 cmd = "gunicorn app:app --bind 0.0.0.0:$PORT"
+
+[variables]
+PLAYWRIGHT_BROWSERS_PATH = "0"

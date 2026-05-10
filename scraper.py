@@ -42,7 +42,13 @@ def scrape_with_playwright(url, extractor_fn):
         raise RuntimeError("Playwright is not installed. Run: pip install playwright && playwright install chromium")
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        # Use system Chromium if available (Railway), otherwise let Playwright find its own
+        import shutil
+        chromium_path = shutil.which("chromium") or shutil.which("chromium-browser")
+        launch_kwargs = {"headless": True}
+        if chromium_path:
+            launch_kwargs["executable_path"] = chromium_path
+        browser = p.chromium.launch(**launch_kwargs)
         context = browser.new_context(
             user_agent=HEADERS["User-Agent"],
             locale="en-US",
